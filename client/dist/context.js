@@ -1,0 +1,226 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TranslationProvider = exports.useTranslationContext = void 0;
+const React = __importStar(require("react"));
+const client_1 = require("./client");
+// 创建翻译上下文
+const TranslationContext = React.createContext({
+    t: (key) => key,
+    locale: 'zh-CN',
+    setLocale: () => { },
+    namespaces: [],
+    isLoading: false,
+    error: null,
+});
+// 导出上下文钩子
+const useTranslationContext = () => React.useContext(TranslationContext);
+exports.useTranslationContext = useTranslationContext;
+// 翻译提供者组件
+const TranslationProvider = ({ children, options, initialLocale, initialNamespaces = ['common'], }) => {
+    const [client] = React.useState(() => new client_1.TranslationClient(options));
+    const [locale, setLocale] = React.useState(initialLocale || options.defaultLocale || 'zh-CN');
+    const [namespaces, setNamespaces] = React.useState(initialNamespaces);
+    const [translations, setTranslations] = React.useState({});
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [error, setError] = React.useState(null);
+    // 加载翻译
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const newTranslations = {};
+                // 加载每个命名空间的翻译
+                for (const namespace of namespaces) {
+                    try {
+                        const data = await client.getTranslations(locale, namespace);
+                        // 检查数据结构
+                        console.log(`Raw data for namespace ${namespace}:`, data);
+                        if (data && typeof data === 'object') {
+                            // API返回的数据结构是 {"common": {...}}
+                            // 我们需要将整个数据对象保存下来，以便在t函数中处理嵌套结构
+                            newTranslations[namespace] = data;
+                            console.log(`Saved data for namespace ${namespace}:`, newTranslations[namespace]);
+                            // 不再使用硬编码的翻译数据，完全依赖数据库中的翻译
+                        }
+                        else {
+                            // 如果数据无效，使用空对象
+                            newTranslations[namespace] = {};
+                            console.log(`Invalid data for namespace ${namespace}, using empty object`);
+                        }
+                        console.log(`Loaded translations for ${namespace}:`, newTranslations[namespace]);
+                    }
+                    catch (nsError) {
+                        console.error(`加载命名空间 ${namespace} 的翻译失败:`, nsError);
+                        newTranslations[namespace] = {};
+                    }
+                }
+                setTranslations(newTranslations);
+            }
+            catch (err) {
+                console.error('加载翻译失败:', err);
+                setError(err instanceof Error ? err : new Error('加载翻译失败'));
+            }
+            finally {
+                setIsLoading(false);
+            }
+        };
+        loadTranslations();
+    }, [client, locale, namespaces]);
+    // 添加命名空间
+    const addNamespace = (namespace) => {
+        if (!namespaces.includes(namespace)) {
+            setNamespaces([...namespaces, namespace]);
+        }
+    };
+    // 翻译函数
+    const t = (key, params, namespace) => {
+        const ns = namespace || options.defaultNamespace || 'common';
+        // 减少日志输出，只保留必要的调试信息
+        // console.log(`t() called with key: ${key}, namespace: ${ns}`);
+        // 检查命名空间是否已加载
+        if (!translations[ns]) {
+            // 如果命名空间未加载，添加到命名空间列表
+            // 静默加载命名空间，不显示调试信息
+            addNamespace(ns);
+            return key; // 返回键，等待命名空间加载
+        }
+        try {
+            // 首先检查完整的键是否存在
+            if (translations[ns][key] && typeof translations[ns][key] === 'string') {
+                return translations[ns][key];
+            }
+            // 如果完整键不存在，尝试嵌套路径
+            const keyParts = key.split('.');
+            // 尝试多种数据结构模式
+            // 模式1: 检查命名空间对象中是否包含命名空间键
+            // 例如: translations['planets']['planets']['mercury']['description']
+            if (translations[ns][ns] && typeof translations[ns][ns] === 'object') {
+                let nsValue = translations[ns][ns];
+                let found = true;
+                let result = nsValue;
+                for (const part of keyParts) {
+                    if (!result || typeof result !== 'object') {
+                        found = false;
+                        break;
+                    }
+                    result = result[part];
+                }
+                if (found && typeof result === 'string') {
+                    return result;
+                }
+            }
+            // 模式2: 直接在命名空间对象中查找完整路径
+            // 例如: translations['planets']['planet']['mercury']['description']
+            let value = translations[ns];
+            let found = true;
+            for (const part of keyParts) {
+                if (!value || typeof value !== 'object') {
+                    found = false;
+                    break;
+                }
+                value = value[part];
+            }
+            if (found && typeof value === 'string') {
+                return value;
+            }
+            // 模式3: 尝试在扁平化结构中查找
+            // 例如: translations['planets']['planet.mercury.description']
+            const flatKey = keyParts.join('.');
+            if (translations[ns][flatKey] && typeof translations[ns][flatKey] === 'string') {
+                return translations[ns][flatKey];
+            }
+            // 如果所有尝试都失败，但有参数需要替换
+            // 尝试在键本身中替换参数，这样至少可以显示参数值
+            if (params) {
+                // 如果value是字符串，使用value进行替换
+                if (typeof value === 'string') {
+                    return Object.entries(params).reduce((acc, [paramKey, paramValue]) => {
+                        return acc.replace(new RegExp(`{${paramKey}}`, 'g'), paramValue);
+                    }, value);
+                }
+                // 如果value不是字符串，但键中包含占位符，尝试在键中替换
+                else if (key.includes('{') && key.includes('}')) {
+                    return Object.entries(params).reduce((acc, [paramKey, paramValue]) => {
+                        return acc.replace(new RegExp(`{${paramKey}}`, 'g'), paramValue);
+                    }, key);
+                }
+            }
+            return key; // 如果找不到翻译，返回键本身
+        }
+        catch (error) {
+            // 只在开发环境下显示错误
+            if (process.env.NODE_ENV === 'development') {
+                console.error(`翻译错误: ${key}`, error);
+            }
+            return key;
+        }
+    };
+    // 切换语言
+    const handleSetLocale = (newLocale) => {
+        // 清除缓存
+        client.clearCache();
+        // 设置新语言
+        setLocale(newLocale);
+        // 如果在浏览器环境中，保存语言设置到本地存储
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('locale', newLocale);
+            // 更新HTML标签的lang属性
+            document.documentElement.lang = newLocale;
+        }
+    };
+    // 在第一次挂载时，从本地存储中获取语言设置
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedLocale = localStorage.getItem('locale');
+            if (savedLocale) {
+                setLocale(savedLocale);
+            }
+            // 设置HTML标签的lang属性
+            document.documentElement.lang = locale;
+        }
+    }, []);
+    return (React.createElement(TranslationContext.Provider, { value: {
+            t,
+            locale,
+            setLocale: handleSetLocale,
+            namespaces,
+            isLoading,
+            error,
+        } }, children));
+};
+exports.TranslationProvider = TranslationProvider;
+//# sourceMappingURL=context.js.map

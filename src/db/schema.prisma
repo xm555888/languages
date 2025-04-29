@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("LANGUAGE_DATABASE_URL")
+}
+
+model Project {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  apiKey      String      @unique
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  namespaces  Namespace[]
+
+  @@map("project")
+}
+
+model Locale {
+  id           String        @id @default(uuid())
+  code         String        @unique
+  name         String
+  nativeName   String
+  isActive     Boolean       @default(true)
+  isDefault    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  translations Translation[]
+
+  @@map("locale")
+}
+
+model Namespace {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  projectId    String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  translations Translation[]
+
+  @@map("namespace")
+}
+
+model Translation {
+  id          String    @id @default(uuid())
+  key         String
+  value       String
+  locale      String
+  description String?
+  namespaceId String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  localeObj   Locale    @relation(fields: [locale], references: [code])
+  namespace   Namespace @relation(fields: [namespaceId], references: [id], onDelete: Cascade)
+
+  @@map("translation")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String
+  entityType String
+  entityId   String
+  oldValue   String?
+  userId     String?
+  userEmail  String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@map("auditlog")
+}

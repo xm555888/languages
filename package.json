@@ -1,0 +1,57 @@
+{
+  "workspaces": [
+    "client",
+    "test"
+  ],
+  "name": "language-service",
+  "version": "1.0.0",
+  "description": "多语言模块系统，为Next.js项目提供多语言支持",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint . --ext .ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "localization",
+    "translation",
+    "fastify",
+    "nextjs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^8.3.0",
+    "@fastify/helmet": "^11.0.0",
+    "@fastify/rate-limit": "^8.0.3",
+    "@fastify/swagger": "^8.8.0",
+    "@prisma/client": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.21.0",
+    "fastify-plugin": "^4.5.1",
+    "ioredis": "^5.3.2",
+    "pino": "^8.14.2",
+    "pino-pretty": "^10.2.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
+    "eslint": "^8.46.0",
+    "prisma": "^5.0.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
+  },
+  "prisma": {
+    "schema": "./src/db/schema.prisma",
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

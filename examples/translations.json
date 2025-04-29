@@ -1,0 +1,84 @@
+{
+  "zh-CN": {
+    "common": {
+      "buttons": {
+        "submit": "提交",
+        "cancel": "取消",
+        "save": "保存",
+        "delete": "删除"
+      },
+      "navigation": {
+        "home": "首页",
+        "about": "关于我们",
+        "products": "产品",
+        "contact": "联系我们"
+      },
+      "errors": {
+        "required": "此字段为必填项",
+        "email": "请输入有效的电子邮件地址",
+        "minLength": "此字段至少需要 {length} 个字符",
+        "maxLength": "此字段最多允许 {length} 个字符"
+      }
+    },
+    "home": {
+      "title": "欢迎使用多语言模块系统",
+      "description": "这是一个基于Fastify的多语言模块系统，为Next.js项目提供多语言支持。",
+      "features": {
+        "title": "功能特点",
+        "items": [
+          "高性能API服务",
+          "Redis缓存优化",
+          "易于集成的React客户端SDK"
+        ]
+      },
+      "cta": {
+        "button": "立即开始",
+        "description": "仅需 {price} 即可获得完整功能"
+      },
+      "footer": {
+        "copyright": "© {year} 多语言模块系统. 保留所有权利."
+      }
+    }
+  },
+  "en": {
+    "common": {
+      "buttons": {
+        "submit": "Submit",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete"
+      },
+      "navigation": {
+        "home": "Home",
+        "about": "About Us",
+        "products": "Products",
+        "contact": "Contact"
+      },
+      "errors": {
+        "required": "This field is required",
+        "email": "Please enter a valid email address",
+        "minLength": "This field requires at least {length} characters",
+        "maxLength": "This field allows at most {length} characters"
+      }
+    },
+    "home": {
+      "title": "Welcome to the Language Module System",
+      "description": "This is a Fastify-based multilingual module system that provides multilingual support for Next.js projects.",
+      "features": {
+        "title": "Features",
+        "items": [
+          "High-performance API service",
+          "Redis cache optimization",
+          "Easy-to-integrate React client SDK"
+        ]
+      },
+      "cta": {
+        "button": "Get Started",
+        "description": "Get full access for just {price}"
+      },
+      "footer": {
+        "copyright": "© {year} Language Module System. All rights reserved."
+      }
+    }
+  }
+}

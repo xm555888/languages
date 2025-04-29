@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # 多语言服务
+  language-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: language-service
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      - NODE_ENV=production
+      - PORT=3100
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://postgres:123456789@postgres:5432/languages?schema=public
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=
+      - REDIS_PREFIX=lang:
+      - API_RATE_LIMIT=100
+      - API_RATE_LIMIT_TIMEWINDOW=60000
+      - CORS_ORIGIN=*
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - language-network
+
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: language-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456789
+      - POSTGRES_DB=languages
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - language-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: language-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - language-network
+
+networks:
+  language-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
