@@ -11,17 +11,18 @@ services:
     ports:
       - "3100:3100"
     environment:
-      - NODE_ENV=production
-      - PORT=3100
-      - HOST=0.0.0.0
-      - DATABASE_URL=postgresql://postgres:123456789@postgres:5432/languages?schema=public
-      - REDIS_URL=redis://redis:6379
-      - REDIS_PASSWORD=
-      - REDIS_PREFIX=lang:
-      - API_RATE_LIMIT=100
-      - API_RATE_LIMIT_TIMEWINDOW=60000
-      - CORS_ORIGIN=*
-      - LOG_LEVEL=info
+      LANGUAGES_NODE_ENV: "production"
+      LANGUAGES_PORT: "3100"
+      LANGUAGES_HOST: "0.0.0.0"
+      LANGUAGE_DATABASE_URL: "postgresql://postgres:123456789@postgres:5432/languages?schema=public"
+      LANGUAGE_REDIS_URL: "redis://redis:6379"
+      LANGUAGE_REDIS_PASSWORD: ""
+      LANGUAGE_REDIS_PREFIX: "lang:"
+      LANGUAGE_API_RATE_LIMIT: "100"
+      LANGUAGE_API_RATE_LIMIT_TIMEWINDOW: "60000"
+      LANGUAGE_CORS_ORIGIN: "*"
+      LANGUAGE_LOG_LEVEL: "info"
+      DOCKER_CONTAINER: "true"
     depends_on:
       - postgres
       - redis
@@ -36,9 +37,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=123456789
-      - POSTGRES_DB=languages
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "123456789"
+      POSTGRES_DB: "languages"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:

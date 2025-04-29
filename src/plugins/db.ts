@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import fp from 'fastify-plugin';
 import { FastifyPluginAsync } from 'fastify';
+import fs from 'fs';
 
 // 声明Fastify实例的类型扩展
 declare module 'fastify' {
@@ -14,8 +15,27 @@ const prismaPlugin: FastifyPluginAsync = async (fastify) => {
   console.log('初始化Prisma客户端...');
   console.log('数据库URL:', process.env.DATABASE_URL);
 
+  // 检测当前运行环境
+  const isContainer = fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER === 'true';
+
+  // 根据环境选择合适的默认数据库URL
+  let defaultDbUrl = 'postgresql://postgres:123456789@localhost:5432/language_service?schema=public';
+
+  if (isContainer) {
+    // 容器环境下，使用服务名而非localhost
+    defaultDbUrl = 'postgresql://postgres:123456789@postgres:5432/languages?schema=public';
+    console.log('检测到容器环境，使用容器网络数据库URL');
+  }
+
   // 使用专用的环境变量中的数据库URL
-  const dbUrl = process.env.LANGUAGE_DATABASE_URL || process.env.DATABASE_URL || 'postgresql://postgres:123456789@localhost:5432/language_service?schema=public';
+  const dbUrl = process.env.LANGUAGE_DATABASE_URL || process.env.DATABASE_URL || defaultDbUrl;
+
+  // 确保LANGUAGE_DATABASE_URL环境变量被设置，因为Prisma直接使用它
+  if (!process.env.LANGUAGE_DATABASE_URL) {
+    process.env.LANGUAGE_DATABASE_URL = dbUrl;
+    console.log('已设置LANGUAGE_DATABASE_URL环境变量');
+  }
+
   console.log('使用数据库URL:', dbUrl);
 
   const prisma = new PrismaClient({

@@ -2,16 +2,43 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 
-// 只加载language模块自己的.env文件
-const languageEnvPath = path.resolve(__dirname, '../../.env');
+// 尝试加载环境文件
+// 首先尝试加载.env文件，如果不存在则尝试加载.env.example文件
+const envPaths = [
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(__dirname, '../../.env.example')
+];
 
-// 加载language模块自己的.env文件
-if (fs.existsSync(languageEnvPath)) {
-  dotenv.config({ path: languageEnvPath });
-  console.log('已加载language模块的.env文件');
-} else {
-  console.log('未找到language模块的.env文件，将使用默认配置');
+let envLoaded = false;
+
+// 尝试加载环境文件
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    console.log(`已加载环境文件: ${envPath}`);
+    envLoaded = true;
+    break;
+  }
 }
+
+// 如果没有找到任何环境文件，则使用环境变量或默认配置
+if (!envLoaded) {
+  console.log('未找到任何环境文件，将使用环境变量或默认配置');
+}
+
+// 检测当前运行环境
+const isContainer = fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER === 'true';
+const environment = process.env.LANGUAGES_NODE_ENV || 'development';
+
+console.log(`检测到运行环境: ${environment}`);
+if (isContainer) console.log('检测到容器环境（Docker/Coolify）');
+
+// 打印关键环境变量，帮助调试
+console.log('环境变量配置:');
+console.log(`- LANGUAGES_NODE_ENV: ${process.env.LANGUAGES_NODE_ENV || '未设置'}`);
+console.log(`- LANGUAGES_PORT: ${process.env.LANGUAGES_PORT || '未设置'}`);
+console.log(`- LANGUAGE_DATABASE_URL: ${process.env.LANGUAGE_DATABASE_URL ? '已设置' : '未设置'}`);
+console.log(`- LANGUAGE_REDIS_URL: ${process.env.LANGUAGE_REDIS_URL ? '已设置' : '未设置'}`);
 
 // 服务器配置
 export const SERVER = {

@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import fp from 'fastify-plugin';
 import { FastifyPluginAsync } from 'fastify';
 import { REDIS } from '../config';
+import fs from 'fs';
 
 // 声明Fastify实例的类型扩展
 declare module 'fastify' {
@@ -12,6 +13,19 @@ declare module 'fastify' {
 
 // 创建Redis客户端插件
 const redisPlugin: FastifyPluginAsync = async (fastify) => {
+  console.log('初始化Redis客户端...');
+
+  // 检测当前运行环境
+  const isContainer = fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER === 'true';
+
+  // 根据环境调整Redis连接配置
+  if (isContainer) {
+    console.log('检测到容器环境，使用容器网络Redis连接');
+  }
+
+  console.log('Redis URL:', REDIS.URL);
+  console.log('Redis前缀:', REDIS.PREFIX);
+
   // 创建Redis客户端
   const redis = new Redis(REDIS.URL, {
     password: REDIS.PASSWORD || undefined,
