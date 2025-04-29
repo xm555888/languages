@@ -34,14 +34,22 @@ WORKDIR /app
 # 复制package.json和package-lock.json
 COPY package*.json ./
 
-# 安装生产依赖
-RUN npm install --omit=dev
+# 安装生产依赖和ts-node（用于seed脚本）
+RUN npm install --omit=dev && npm install -g ts-node typescript
 
-# 复制构建产物
+# 复制构建产物和必要文件
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/src/db/schema.prisma ./src/db/schema.prisma
+
+# 确保prisma目录存在并复制seed文件
+RUN mkdir -p ./prisma
+COPY --from=builder /app/prisma/seed.ts ./prisma/
+
+# 复制启动脚本
+COPY start.sh ./
+RUN chmod +x ./start.sh
 
 # 设置环境变量
 ENV LANGUAGES_NODE_ENV=production
@@ -53,4 +61,4 @@ ENV DOCKER_CONTAINER=true
 EXPOSE 3100
 
 # 启动应用
-CMD ["node", "dist/server.js"]
+CMD ["./start.sh"]

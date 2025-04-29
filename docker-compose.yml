@@ -24,8 +24,10 @@ services:
       LANGUAGE_LOG_LEVEL: "info"
       DOCKER_CONTAINER: "true"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
     networks:
       - language-network
 
