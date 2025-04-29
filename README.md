@@ -281,7 +281,147 @@ GET /api/v1/:projectId/languages
 
 ## 导入翻译数据
 
-可以使用提供的脚本导入翻译数据：
+有多种方法可以导入翻译数据，包括本地开发环境和Docker部署环境。
+
+### 方法1：使用API接口批量导入（推荐）
+
+这是最简单的方法，适用于本地开发环境和Docker部署环境，不需要直接访问数据库。
+
+#### 步骤1 - 准备翻译数据JSON文件，格式如下
+
+```json
+{
+  "translations": [
+    {
+      "key": "hello",
+      "value": "你好",
+      "locale": "zh-CN",
+      "namespace": "common",
+      "description": "问候语"
+    },
+    {
+      "key": "welcome",
+      "value": "欢迎 {name}",
+      "locale": "zh-CN",
+      "namespace": "common",
+      "description": "欢迎信息"
+    },
+    {
+      "key": "hello",
+      "value": "Hello",
+      "locale": "en",
+      "namespace": "common",
+      "description": "Greeting"
+    },
+    {
+      "key": "welcome",
+      "value": "Welcome {name}",
+      "locale": "en",
+      "namespace": "common",
+      "description": "Welcome message"
+    }
+  ]
+}
+```
+
+#### 步骤2 - 使用PowerShell脚本调用API导入翻译数据
+
+```powershell
+# 设置项目ID
+$projectId = "你的项目ID"
+
+# 读取JSON文件
+$jsonObj = Get-Content -Path "path/to/translations.json" | ConvertFrom-Json
+
+# 转换为JSON字符串
+$jsonBody = $jsonObj | ConvertTo-Json -Depth 10 -Compress
+
+# 调用API
+$response = Invoke-WebRequest -Method POST -Uri "http://localhost:3100/api/v1/$projectId/translations/batch" -Body $jsonBody -ContentType "application/json"
+
+# 显示结果
+$response.Content
+```
+
+#### 步骤3 - 如果服务部署在Docker中，只需将URL替换为Docker容器的地址
+
+```powershell
+# 对于本地Docker部署
+$response = Invoke-WebRequest -Method POST -Uri "http://localhost:3100/api/v1/$projectId/translations/batch" -Body $jsonBody -ContentType "application/json"
+
+# 对于远程Docker部署
+$response = Invoke-WebRequest -Method POST -Uri "http://your-server-address:3100/api/v1/$projectId/translations/batch" -Body $jsonBody -ContentType "application/json"
+```
+
+### 方法2：使用导入脚本
+
+项目提供了一个更强大的导入脚本，可以从JSON文件导入完整的项目、语言和翻译数据。
+
+#### 步骤1 - 准备导入数据JSON文件，格式如下
+
+```json
+{
+  "project": {
+    "id": "你的项目ID",
+    "name": "项目名称",
+    "description": "项目描述"
+  },
+  "locales": [
+    {
+      "code": "zh-CN",
+      "name": "简体中文",
+      "nativeName": "简体中文",
+      "isDefault": true
+    },
+    {
+      "code": "en",
+      "name": "English",
+      "nativeName": "English",
+      "isDefault": false
+    }
+  ],
+  "namespaces": [
+    {
+      "name": "common",
+      "translations": {
+        "zh-CN": {
+          "hello": "你好",
+          "welcome": "欢迎 {name}"
+        },
+        "en": {
+          "hello": "Hello",
+          "welcome": "Welcome {name}"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### 步骤2 - 对于本地开发环境，直接运行脚本
+
+```bash
+cd languages
+node scripts/import-translations-from-file.js path/to/import-data.json
+```
+
+#### 步骤3 - 对于Docker部署环境，修改脚本中的数据库连接字符串
+
+```js
+// 修改scripts/import-translations-from-file.js中的数据库连接
+process.env.DATABASE_URL = 'postgresql://postgres:123456789@your-docker-postgres-host:5432/language_service';
+```
+
+然后运行脚本：
+
+```bash
+cd languages
+node scripts/import-translations-from-file.js path/to/import-data.json
+```
+
+### 方法3：使用自定义导入脚本
+
+你也可以创建自定义脚本，根据特定需求导入翻译数据：
 
 ```js
 // languages/scripts/import-translations.js
@@ -418,6 +558,92 @@ importTranslations();
 cd languages
 node scripts/import-translations.js
 ```
+
+## Docker部署环境下的翻译数据导入
+
+当服务部署在Docker容器中时，我们推荐使用以下方法导入翻译数据：
+
+### 使用导入脚本（推荐）
+
+这是最可靠的方法，可以直接将翻译数据导入到Docker容器中的数据库。
+
+#### 步骤1 - 准备导入数据JSON文件
+
+创建一个包含项目、语言和翻译数据的JSON文件，格式如下：
+
+```json
+{
+  "project": {
+    "id": "你的项目ID",
+    "name": "项目名称",
+    "description": "项目描述"
+  },
+  "locales": [
+    {
+      "code": "zh-CN",
+      "name": "简体中文",
+      "nativeName": "简体中文",
+      "isDefault": true
+    },
+    {
+      "code": "en",
+      "name": "English",
+      "nativeName": "English",
+      "isDefault": false
+    }
+  ],
+  "namespaces": [
+    {
+      "name": "common",
+      "translations": {
+        "zh-CN": {
+          "hello": "你好",
+          "welcome": "欢迎 {name}"
+        },
+        "en": {
+          "hello": "Hello",
+          "welcome": "Welcome {name}"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### 步骤2 - 确保Docker容器的PostgreSQL端口已映射到主机
+
+在docker-compose.yml文件中，确保PostgreSQL容器的端口已映射到主机：
+
+```yaml
+services:
+  postgres:
+    # ...其他配置
+    ports:
+      - "5432:5432"  # 将容器的5432端口映射到主机的5432端口
+```
+
+#### 步骤3 - 修改脚本中的数据库连接字符串
+
+修改scripts/import-translations-from-file.js文件中的数据库连接字符串，使其连接到Docker容器中的PostgreSQL：
+
+```js
+// 修改scripts/import-translations-from-file.js中的数据库连接
+process.env.DATABASE_URL = 'postgresql://postgres:123456789@localhost:5432/languages';
+```
+
+#### 步骤4 - 运行导入脚本
+
+```bash
+cd languages
+node scripts/import-translations-from-file.js path/to/import-data.json
+```
+
+### 注意事项
+
+1. 确保在导入前已经启动了Docker容器
+2. 确保PostgreSQL端口已正确映射
+3. 如果PostgreSQL使用的是不同的端口，请相应地修改连接字符串
+4. 导入后可能需要重启服务容器以清除缓存
 
 ## 最佳实践
 
