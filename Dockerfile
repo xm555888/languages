@@ -45,11 +45,11 @@ COPY --from=builder /app/src/db/schema.prisma ./src/db/schema.prisma
 
 # 确保prisma目录存在并复制seed文件
 RUN mkdir -p ./prisma
-COPY --from=builder /app/prisma/seed.ts ./prisma/
+COPY --from=builder /app/prisma/seed.js ./prisma/
 
-# 复制启动脚本
-COPY start.sh ./
-RUN chmod +x ./start.sh
+# 确保scripts目录存在并复制等待脚本
+RUN mkdir -p ./scripts
+COPY --from=builder /app/scripts/wait-for-postgres.js ./scripts/
 
 # 设置环境变量
 ENV LANGUAGES_NODE_ENV=production
@@ -61,4 +61,4 @@ ENV DOCKER_CONTAINER=true
 EXPOSE 3100
 
 # 启动应用
-CMD ["./start.sh"]
+CMD ["sh", "-c", "node scripts/wait-for-postgres.js && npx prisma db push --force-reset && node prisma/seed.js && node dist/server.js"]
