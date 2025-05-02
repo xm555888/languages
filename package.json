@@ -14,7 +14,9 @@
     "lint": "eslint . --ext .ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "generate:seeds": "node scripts/generate-translation-seeds.js",
+    "update:translations": "node scripts/generate-translation-seeds.js && npx prisma db seed"
   },
   "keywords": [
     "i18n",

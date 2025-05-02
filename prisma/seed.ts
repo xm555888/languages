@@ -1,5 +1,5 @@
 // 这是自动生成的Prisma种子脚本，用于初始化ImagerAI的翻译数据
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
